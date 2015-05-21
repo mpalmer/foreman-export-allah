@@ -1,35 +1,37 @@
 # -*- ruby -*-
 
-require 'rubygems'
-require 'hoe'
+exec(*(["bundle", "exec", $PROGRAM_NAME] + ARGV)) if ENV['BUNDLE_GEMFILE'].nil?
 
-Hoe.plugin :signing
-Hoe.plugin :deveiate
-Hoe.plugin :mercurial
+Bundler.setup(:default, :development)
 
-Hoe.plugins.delete :rubyforge
+task :default => :test
 
-hoespec = Hoe.spec( 'foreman-export-daemontools' ) do
-	self.readme_file = 'README.rdoc'
-	self.history_file = 'History.rdoc'
-	self.extra_rdoc_files = FileList[ '*.rdoc' ]
-
-	self.developer 'Michael Granger', 'ged@FaerieMUD.org'
-
-	self.dependency 'foreman', '~> 0.60'
-	self.dependency 'hoe-deveiate',    '~> 0.1', :developer
-
-	self.spec_extras[:licenses] = ["BSD"]
-	self.spec_extras[:rdoc_options] = ['-f', 'fivefish', '-t', 'Foreman Daemontools Exporter']
-	self.require_ruby_version( '>=1.9.2' )
-	self.hg_sign_tags = true if self.respond_to?( :hg_sign_tags= )
-	self.check_history_on_release = true if self.respond_to?( :check_history_on_release= )
-
-	self.rdoc_locations << "deveiate:/usr/local/www/public/code/#{remote_rdoc_dir}"
+begin
+	Bundler.setup(:default, :development)
+rescue Bundler::BundlerError => e
+	$stderr.puts e.message
+	$stderr.puts "Run `bundle install` to install missing gems"
+	exit e.status_code
 end
 
-ENV['VERSION'] ||= hoespec.spec.version.to_s
+Bundler::GemHelper.install_tasks
 
-# Ensure the specs pass before checking in
-task 'hg:precheckin' => [ :check_history, :check_manifest, :spec ]
+task :release do
+	sh "git release"
+end
 
+require 'yard'
+
+YARD::Rake::YardocTask.new :doc do |yardoc|
+	yardoc.files = %w{lib/**/*.rb - README.md}
+end
+
+desc "Run guard"
+task :guard do
+	sh "guard --clear"
+end
+
+require 'rspec/core/rake_task'
+RSpec::Core::RakeTask.new :test do |t|
+	t.pattern = "spec/**/*_spec.rb"
+end

@@ -1,63 +1,41 @@
-= foreman-export-daemontools
-
-home :: https://bitbucket.org/ged/foreman-export-daemontools
-github :: https://github.com/ged/foreman-export-daemontools
-docs :: http://deveiate.org/code/foreman-export-daemontools
-
-
-== Description
-
-An exporter for David Dollar's Foreman[https://github.com/ddollar/foreman] that
-outputs service directories that can be managed by 'supervise' from DJB's
-daemontools[http://cr.yp.to/daemontools.html].
+An exporter for David Dollar's [Foreman](https://github.com/ddollar/foreman)
+that outputs service directories that can be managed by a per-user `svscan`,
+with additional configuration which makes it
+[allah](https://github.com/mpalmer/allah)-compatible.
 
 
-== Prerequisites
+# Prerequisites
 
-* Ruby 1.9.3 or better
+* Ruby 2.0.0 or later
 * Foreman
 
 
-== Installation
+# Installation
 
-    $ gem install foreman-export-daemontools
+    $ gem install foreman-export-allah
 
 
-== Usage
+# Usage
 
-To export your Procfile to the standard +/service+ directory:
+To export your Procfile to a `~/service` directory:
 
-    $ foreman export daemontools /service
+    $ foreman export allah ~/service
 
-This will create a <tt>/service/<app>-<proc></tt> directory for each +Procfile+
+This will create a `~/service/<app>-<proc>` directory for each `Procfile`
 process. If you have the concurrency set to something > 1 for any of them it
 will create an individual numbered service directory for each one in the
-format: <tt>/service/<app>-<proc>-<num></tt>
+format: `~/service/<app>-<proc>-<num>`.
 
-Each directory will be generated with a +down+ file, which will prevent
+Each directory will be generated with a `down` file, which will prevent
 supervise from automatically starting it before you have a chance to look it over.
 After you confirm that everything looks okay, you can start them up just by
-removing +down+.
+removing `down` on each service, or running `allah start <app>`.
 
 
-== Contributing
-
-You can check out the current development source with Mercurial from its
-{main repository}[https://bitbucket.org/ged/foreman-export-daemontools]. Or
-if you prefer Git, via its
-{Github mirror}[https://github.com/ged/foreman-export-daemontools].
-
-After checking out the source, run:
-
-    $ rake newb
-
-This task will install any missing dependencies, run the tests/specs,
-and generate the API documentation.
-
-
-== License
+# License
 
 Copyright (c) 2012, Michael Granger
+Copyright (c) 2015, Matt Palmer
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

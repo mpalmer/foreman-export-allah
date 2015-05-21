@@ -1,6 +1,0 @@
-Procfile
-\.env
-\.foreman
-ChangeLog
-doc/
-pkg/

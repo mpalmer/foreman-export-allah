@@ -2,7 +2,7 @@
 
 <% if self.log %>
 % logdir = Pathname(self.log) + '/' + procdir.basename
-exec setuidgid <%= user %> multilog t <%= logdir %>
+exec multilog t <%= logdir %>
 <% else %>
-exec setuidgid <%= user %> multilog t ./main
+exec multilog t ./main
 <% end %>

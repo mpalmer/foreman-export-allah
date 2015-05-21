@@ -9,25 +9,20 @@ require 'foreman/export'
 require 'foreman/cli'
 
 
-# A Foreman exporter for daemontools[http://cr.yp.to/daemontools.html]. This exports
-# processes from the Procfile as a hierarchy of directories intended to be run under
-# 'supervise'
+# A Foreman exporter for allah-enhanced daemontools. This exports processes
+# from the Procfile as a hierarchy of directories intended to be run under
+# the supervision of a per-user svscan.
 #
-# Some of this code was borrowed from the 'runit' exporter.
-class Foreman::Export::Daemontools < Foreman::Export::Base
-
-	# Library version constant
-	VERSION = '0.1.0'
-
-	# Version-control revision constant
-	REVISION = %q$Revision$
-
+# This code is based on `foreman-export-daemontools`, which in turn borrowed
+# some of its code from the 'runit' exporter.
+#
+class Foreman::Export::Allah < Foreman::Export::Base
 	# The data directory in the project if that exists, otherwise the gem datadir
 	DEFAULT_DATADIR = if ENV['FOREMAN_EXPORT_DATADIR']
 			Pathname( ENV['FOREMAN_EXPORT_DATADIR'] )
-		elsif File.directory?( 'data/foreman-export-daemontools' )
-			Pathname( 'data/foreman-export-daemontools' )
-		elsif path = Gem.datadir( 'foreman-export-daemontools' )
+		elsif File.directory?( 'data/foreman-export-allah' )
+			Pathname( 'data/foreman-export-allah' )
+		elsif path = Gem.datadir( 'foreman-export-allah' )
 			Pathname( path )
 		else
 			raise ScriptError, "can't find the data directory!"
@@ -49,6 +44,9 @@ class Foreman::Export::Daemontools < Foreman::Export::Base
 	### Set up the template root
 	def initialize( location, engine, options={} ) # :notnew:
 		super
+		servicedir = self.location or
+			raise Foreman::Export::Exception, "No service directory specified."
+		@servicedir = Pathname( servicedir )
 		@logger = Logger.new( $stderr )
 		@template_search_path = [ HOME_TEMPLATEDIR, DEFAULT_DATADIR + 'templates' ]
 		@template_search_path.unshift( Pathname(options[:template]) ) if options.key?( :template )
@@ -70,15 +68,12 @@ class Foreman::Export::Daemontools < Foreman::Export::Base
 
 	### Main API method -- export the loaded Procfile as supervise service directories
 	def export
-		servicedir = self.location or
-			raise Foreman::Export::Exception, "No service directory specified."
-		servicedir = Pathname( servicedir )
 		app        = self.app || File.basename( self.engine.directory )
 		user       = self.user || app
 
-		unless servicedir.exist?
-			say "Creating #{servicedir}..."
-			servicedir.mkpath
+		unless @servicedir.exist?
+			say "Creating #{@servicedir}..."
+			@servicedir.mkpath
 		end
 
 	    engine.each_process do |name, process|
@@ -86,23 +81,24 @@ class Foreman::Export::Daemontools < Foreman::Export::Base
 			count   = engine.formation[ name ]
 			say "  concurrency = #{count}"
 			next unless count >= 1
-			procdir = servicedir + "%s-%s" % [ app, name ]
 
 			# Create a numbered service dir for each instance if there are
 			# more than one
 			if count != 1
 				1.upto( count ) do |i|
-					self.write_servicedir( process, Pathname(procdir.to_s + "-#{i}"), user, i )
+					self.write_servicedir( app, name, i, process, true )
 				end
 			else
-				self.write_servicedir( process, procdir, user )
+				self.write_servicedir( app, name, 1, process )
 			end
 		end
 	end
 
 
 	### Write a supervise directory to +targetdir+
-	def write_servicedir( process, procdir, user, num=1  )
+	def write_servicedir( app, name, num, process, multi = false  )
+		procdir = @servicedir + "#{app}-#{name}#{multi ? "-#{num}" : ''}"
+
 		say "Making directory %s..." % [ procdir ]
 		procdir.mkpath
 
@@ -132,6 +128,10 @@ class Foreman::Export::Daemontools < Foreman::Export::Base
 			write_file( envdir + var, env )
 		end
 
+		# Set up the groupfile
+		groupfile = procdir + 'group'
+		write_file(groupfile, "#{app}-#{name}\n#{app}\n")
+
 		# Set up the runfile
 		runtmpl = self.load_template( 'run' )
 		runfile = procdir + 'run'
@@ -141,7 +141,7 @@ class Foreman::Export::Daemontools < Foreman::Export::Base
 	end
 
 
-	### Load the daemontools template for the file named +name+, and return it
+	### Load the template for the file named +name+, and return it
 	### as an ERB object.
 	def load_template( name )
 		template_name = "#{name}.erb"

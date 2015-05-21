@@ -1,0 +1,3 @@
+cms: bundle exec rake cms:something
+mongrel2: bundle exec rackup
+api: bundle exec rake api
