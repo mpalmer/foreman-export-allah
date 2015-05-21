@@ -1,8 +1,14 @@
 #!/bin/sh
 
-<% if self.log %>
-% logdir = Pathname(self.log) + '/' + procdir.basename
-exec multilog t <%= logdir %>
-<% else %>
-exec multilog t ./main
-<% end %>
+<%
+# We have to test self.options[:log] directly, because self.log has a derpy
+# default (/var/log/<app>) which someone might actually want to use
+# explicitly, so I can't rely on that being the wrong thing.  So, I dig into
+# self.options to find out whether to use the default or not.  Sigh.
+logdir = if self.options[:log]
+	Pathname(self.log) + procdir.basename
+else
+	"./logs"
+end
+%>
+exec multilog s16777215 t <%= logdir %>

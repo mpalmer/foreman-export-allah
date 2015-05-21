@@ -107,8 +107,18 @@ describe Foreman::Export::Allah do
 				expect(logrun).to be_executable
 			end
 			
-			it "puts the correct content in the log runfile" do
-				expect(logrun.read).to match(%r{exec multilog t})
+			context "with default log option" do
+				it "puts the correct content in the log runfile" do
+					expect(logrun.read).to match(%r{^exec multilog s16777215 t ./logs$})
+				end
+			end
+
+			context "with a custom log option" do
+				let(:options) { super().merge(:log => "/my/log/dir") }
+
+				it "puts the correct content in the log runfile" do
+					expect(logrun.read).to match(%r{^exec multilog s16777215 t /my/log/dir/#{procname}$})
+				end
 			end
 
 			let(:envdir) { procdir + 'env' }
