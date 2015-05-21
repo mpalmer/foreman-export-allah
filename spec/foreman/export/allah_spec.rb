@@ -88,8 +88,12 @@ describe Foreman::Export::Allah do
 				expect(runfile).to be_executable
 			end
 			
-			it "puts the correct content in the runfile" do
-				expect(runfile.read).to match(%r{exec envdir \./env })
+			it "changes to the correct directory" do
+				expect(runfile.read).to match(%r{^cd #{datadir}$})
+			end
+
+			it "runs the correct command" do
+				expect(runfile.read).to match(%r{^exec envdir \./env })
 			end
 			
 			let(:logdir) { procdir + 'log' }
