@@ -93,7 +93,7 @@ describe Foreman::Export::Allah do
 			end
 
 			it "runs the correct command" do
-				expect(runfile.read).to match(%r{^exec envdir \./env })
+				expect(runfile.read).to match(%r{^exec envdir #{procdir}/env })
 			end
 			
 			let(:logdir) { procdir + 'log' }

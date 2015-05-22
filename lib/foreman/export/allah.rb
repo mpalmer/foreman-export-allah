@@ -111,9 +111,8 @@ class Foreman::Export::Allah < Foreman::Export::Base
 		say "  setting up logging..."
 		logdir = procdir + 'log'
 		logdir.mkpath
-		logruntmpl = self.load_template( 'log-run' )
 		runfile = logdir + 'run'
-		write_file( runfile, logruntmpl.result(binding()) )
+		write_file( runfile, template('log-run').result(binding) )
 		runfile.chmod( 0755 )
 
 		# Set up the envdir
@@ -133,9 +132,8 @@ class Foreman::Export::Allah < Foreman::Export::Base
 		write_file(groupfile, "#{app}-#{name}\n#{app}\n")
 
 		# Set up the runfile
-		runtmpl = self.load_template( 'run' )
 		runfile = procdir + 'run'
-		write_file( runfile, runtmpl.result(binding()) )
+		write_file( runfile, template('run').result(binding) )
 		runfile.chmod( 0755 )
 
 	end
@@ -143,7 +141,7 @@ class Foreman::Export::Allah < Foreman::Export::Base
 
 	### Load the template for the file named +name+, and return it
 	### as an ERB object.
-	def load_template( name )
+	def template( name )
 		template_name = "#{name}.erb"
 		template = self.template_search_path.
 			map {|dir| dir + template_name }.

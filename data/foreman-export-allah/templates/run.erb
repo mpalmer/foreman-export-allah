@@ -3,5 +3,4 @@
 exec 2>&1
 cd <%= self.engine.root %>
 
-exec envdir ./env <%= process.command %>
-
+exec envdir <%= procdir %>/env <%= process.command %>
